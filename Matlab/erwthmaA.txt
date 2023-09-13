@@ -1,0 +1,195 @@
+clear all;
+close all;
+% A1
+over=10;
+T=10^(-2);
+Ts=T/over;
+Fs=1/Ts;
+a=1/2;
+A=4;
+Nf=4096;
+F=-Fs/2:Fs/Nf:Fs/2-Fs/Nf;
+[ph,t] = srrc_pulse(T,over,A,a);
+
+phF=fftshift(fft(ph,Nf).*Ts);
+
+figure()
+p= semilogy(F,abs(phF).^2);
+title('Semilogy for Power Spectral Density');
+ylabel('|PH(F)|^2');
+xlabel('F');
+
+
+% A2
+N=100;
+bs = (sign (randn(N,1)) + 1)/2;
+x = bits_to_2PAM(bs);
+xN=(1/Ts)*upsample(x,over);
+t_xN=(0:Ts:N/(1/T)-Ts);
+%Υπολογίζουμε την συνέλιξη και δημιουργούμε τον άξονα του χρόνου
+xconv=conv(ph,xN).*Ts;
+tconv=t(1)+t_xN(1):Ts:t(end)+t_xN(end);
+
+figure();
+plot(tconv,xconv);
+ylabel('X(t)');
+xlabel('t');
+title('Conv of Xn and ph(t) (2-PAM)');
+
+
+
+% A3
+
+%A3.1
+Ttotal=length(tconv)*Ts;
+%Μετασχηματισμος Fourier και δημιουργία της Px
+Fx=fftshift(fft(xconv,Nf)*Ts);
+Px=(abs(Fx).^2)/Ttotal;
+%Εκτύπωση αποτελέσματος με την χρήση semilogy
+figure()
+semilogy(F,Px);
+ylabel('Px(F)');
+xlabel('F(Hz)');
+title('Px(F) using semilogy');
+%Εκτυπωση αποτελέσματος με τη χρήση plot
+figure()
+plot(F,Px);
+ylabel('Px(F)');
+xlabel('F(Hz)');
+title('Px(F) using plot');
+
+%A3.2
+k=500;
+%Επαναλαμβάνουμε κ φορές
+for i=1:k
+    b = (sign(randn(N,1))+1)/2;
+    x_test = bits_to_2PAM(b);
+    xn=(1/Ts)*upsample(x_test,over);
+    x_conv_test=conv(ph,xn)*Ts;
+    t_conv_test=t(1)+t_xN(1):Ts:t(end)+t_xN(end);
+    len_t=length(t_conv_test)*Ts;
+    Fx_test=fftshift(fft(x_conv_test,Nf)*Ts);
+    Px=(abs(Fx_test).^2)/len_t;
+    P(i,:)=Px;
+end
+%Υπολογίζουμε τον πειραματικό ΜΟ του αποτελέσματος
+Pavg=sum(P)/k;
+%Υπολογίζουμε την θεωρητική τιμή
+Sx=(var(x)).*abs((phF).^2)./T;
+%Εμφανίζουμε τα αποτελέσματα σε ένα κοινο plot 
+figure()
+semilogy(F,Sx,'red');
+ylabel('Px(F) and Sx(f)');
+xlabel('F(Hz)');
+title(['Theoretical and Experimental Diagram for k= ',num2str(k)]);
+grid on;
+hold on;
+semilogy(F,Pavg,'blue');
+hold off;
+
+%A4 
+
+%Α4.1
+%Δημιουργόυμε το 4-PAM
+ N4=N/2;
+ b1s=(sign(randn(N4,1))+1)/2;
+ b2s=(sign(randn(N4,1))+1)/2;
+ x4=bits_to_4PAM(b1s,b2s);
+ xN4=(1/Ts)*upsample(x4,over);
+ t_xN4=(0:Ts:N4/(1/T)-Ts);
+ %Υπολογίχουμε την συνελιξη και δημιουργούμε τον άξονα του χρόνου
+ xconv=conv(ph,xN4).*Ts;
+ tconv=t(1)+t_xN4(1):Ts:t(end)+t_xN4(end);
+ %Εκτυπώνουμε τα αποτελέσαμτα
+ figure();
+ plot(tconv,xconv);
+ ylabel('X(t)');
+ xlabel('t');
+ title('Conv of ph(t) and Xn in 4-PAM');
+ 
+%A4.2
+k=500;
+%Επαναλαμβάνουμε κ φορές
+for i=1:k
+    b1=(sign(randn(N4,1))+1)/2;
+    b2=(sign(randn(N4,1))+1)/2;
+    x4_test=bits_to_4PAM(b1,b2);
+    xn4=(1/Ts)*upsample(x4_test,over);
+    x_conv_test4=conv(ph,xn4)*Ts;
+    t_conv_test4=t(1)+t_xN4(1):Ts:t(end)+t_xN4(end);
+    len_t4=length(t_conv_test4)*Ts;
+    Fx4_test=fftshift(fft(x_conv_test4,Nf)*Ts);
+    Px=(abs(Fx4_test).^2)/len_t4;
+    P(i,:)=Px;
+end
+%Υπολογίζουμε τον πειραματικό ΜΟ του αποτελέσματος
+Pavg=sum(P)/k;
+%Υπολογίζουμε την θεωρητική τιμή
+Sx=(var(x4)).*abs((phF).^2)./T;
+%Εμφανίζουμε τα αποτελέσματα σε ένα κοινο plot
+figure()
+semilogy(F,Sx,'red');
+ylabel('Px(F) and Sx(f)');
+xlabel('F(Hz)');
+title(['Theoretical and Experimental Diagram for k= ',num2str(k)]);
+grid on;
+hold on;
+semilogy(F,Pavg,'blue');
+hold off;
+
+% A5
+N=100;
+over_5=2*over;
+T_5=2*T;
+Nf=4096;
+F=-Fs/2:Fs/Nf:Fs/2-Fs/Nf;
+[ph,t] = srrc_pulse(T_5,over_5,A,a);
+phF=fftshift(fft(ph,Nf).*Ts);
+xN=(1/Ts)*upsample(x,over_5);
+t_xN=(0:Ts:N/(1/T_5)-Ts);
+%Υπολογίχουμε την συνελιξη και δημιουργούμε τον άξονα του χρόνου
+x_conv=conv(ph,xN).*Ts;
+t_conv=t(1)+t_xN(1):Ts:t(end)+t_xN(end);
+
+Ttotal=length(t_conv)*Ts;
+%Μετασχηματισμος Fourier και δημιουργία της Px
+Fx=fftshift(fft(x_conv,Nf)*Ts);
+Px=(abs(Fx).^2)/Ttotal;
+%Εκτυπώνουμε τα αποτελέσματα με semilogy
+figure()
+semilogy(F,Px);
+ylabel('Px(F)');
+xlabel('F(Hz)');
+title('Px(F) with semilogy with T΄=2T ');
+%Εκτυπώνουμε τα αποτελέσματα με plot
+figure()
+plot(F,Px);
+ylabel('Px(F)');
+xlabel('F(Hz)');
+title('Px(F) with plot T΄=2T');
+k=500;
+%Επαναλαμβάνουμε κ φορές
+for i=1:k
+    b = (sign(randn(N,1))+1)/2;
+    x_test = bits_to_2PAM(b);
+    xn=(1/Ts)*upsample(x_test,over_5);
+    x_conv_test=conv(ph,xn)*Ts;
+    Fx_test=fftshift(fft(x_conv_test,Nf)*Ts);
+    Px=(abs(Fx_test).^2)/Ttotal;
+    P(i,:)=Px;
+end
+%Υπολογίζουμε τον πειραματικό ΜΟ του αποτελέσματος
+Pavg=sum(P)/k;
+%Υπολογίζουμε την θεωρητική τιμή
+Sx=(var(x)).*abs((phF).^2)./T_5;
+%Εμφανίζουμε τα αποτελέσματα σε ένα κοινο plot
+figure()
+semilogy(F,Sx,'red');
+ylabel('Px(F) and Sx(f)');
+xlabel('F(Hz)');
+title(['Theoritical and Experimental Diagram for k= ',num2str(k)]);
+grid on;
+hold on;
+semilogy(F,Pavg,'blue');
+hold off;
+
